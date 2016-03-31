@@ -1,0 +1,53 @@
+# data volume
+datastore:
+  image: busybox
+  volumes:
+   - /var/lib/mysql
+# mysql
+mysql:
+  image: mysql
+  volumes:
+    - ./mysql_conf.d:/etc/mysql/conf.d
+  volumes_from:
+    - datastore
+  ports:
+    - "3306:3306"
+  environment:
+    MYSQL_ROOT_PASSWORD: mysql
+    MYSQL_DATABASE: openslideshare
+mail:
+  image: tvial/docker-mailserver
+  hostname: mail
+  domainname: cimadai.net
+  volumes:
+    - ./postfix:/tmp/postfix/
+  ports:
+    - "25:25"
+  environment:
+    SMTP_ONLY: 1
+    DMS_SSL: self-signed
+# slidehub
+oss:
+  image: ryuzee/slidehub
+  volumes_from:
+    - datastore
+  links:
+    - mysql:mysql_db
+    - mail:mail.cimadai.net
+  ports:
+    - "33000:3000"
+  expose:
+    - 33000
+  environment:
+    OSS_SECRET_KEY_BASE: kp5cARV23gMwCCVy7DFgGPr7fVvMVJjrPsDhhSBPYcw6
+    OSS_DB_USERNAME: root
+    OSS_DB_PASSWORD: mysql
+    OSS_DB_URL: mysql_db
+    OSS_PRODUCTION_HOST: slidehub.cimadai.net
+    OSS_ROOT_URL: https://slidehub.cimadai.net
+    OSS_SMTP_SERVER: mail.cimadai.net
+    OSS_SMTP_PORT: 25
+    OSS_SMTP_USERNAME: slidehub@cimadai.net
+    OSS_SMTP_PASSWORD: mypassword
+    OSS_SMTP_AUTH_METHOD: plain
+    OSS_FROM_EMAIL: slidehub@cimadai.net
